@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한 걸음 서클 (One-Step Circle) - 모바일 체험 툴킷</title>
+    <!-- React & Tailwind CSS CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [step, setStep] = useState(1);
+            
+            // 1단계: 마음 체크인
+            const [selectedEmoji, setSelectedEmoji] = useState(null);
+            const [checkinNote, setCheckinNote] = useState('');
+            
+            // 2단계: 3대 최소 행동 시뮬레이션
+            const [selectedScenario, setSelectedScenario] = useState(null);
+            const [selectedAction, setSelectedAction] = useState(null);
+            const [practiceScript, setPracticeScript] = useState('');
+            const [roleplayCompleted, setRoleplayCompleted] = useState(false);
+
+            // 3단계: 회복적 질문 툴킷
+            const [restorativeAnswers, setRestorativeAnswers] = useState({
+                q1: '', q2: '', q3: '', q4: ''
+            });
+
+            // 4단계: 셀프 평가
+            const [confidence, setConfidence] = useState(3);
+            const [completed, setCompleted] = useState(false);
+
+            const emojis = [
+                { emoji: '😊', label: '평온함' },
+                { emoji: '😟', label: '불안함' },
+                { emoji: '😤', label: '답답함' },
+                { emoji: '😴', label: '피곤함' },
+                { emoji: '🤝', label: '연결됨' }
+            ];
+
+            const scenarios = [
+                {
+                    id: 1,
+                    title: '단톡방 외면·조롱 상황',
+                    desc: '반 단톡방에서 친구 한 명의 캡처 사진을 두고 장난 섞인 조롱 댓글이 이어지고 있고, 당사자는 아무 말도 하지 못하고 있습니다.'
+                },
+                {
+                    id: 2,
+                    title: '급식실 소외 및 은따 상황',
+                    desc: '급식실에서 특정 친구가 앉으려고 하자 주변 아이들이 자리를 옮기며 은근히 혼자 남겨두고 있습니다.'
+                },
+                {
+                    id: 3,
+                    title: '복도 언어적 시비 상황',
+                    desc: '쉬는 시간 복도에서 지나가는 친구에게 기분 나쁜 별명을 지속적으로 부르며 장난을 치고 있습니다.'
+                }
+            ];
+
+            const actions = [
+                {
+                    id: 'stay',
+                    title: '① 곁에 있기 (소속감 전하기)',
+                    guide: '당사자에게 조용히 개인 메시지나 메신저로 조용한 지지를 보냅니다.',
+                    example: '"괜찮아? 나는 네 편이야. 같이 매점 갈래?"'
+                },
+                {
+                    id: 'redirect',
+                    title: '② 분위기 돌리기 (장면 전환)',
+                    guide: '상황을 자연스럽게 끊거나 다른 주제로 화제를 돌립니다.',
+                    example: '"아 맞다, 우리 다음 시간 과제 제출 언제까지지?"'
+                },
+                {
+                    id: 'report',
+                    title: '③ 어른에게 알리기 (안전 연계)',
+                    guide: '혼자 해결하려 하지 않고 담임선생님이나 Wee클래스에 알립니다.',
+                    example: '"선생님, 단톡방에서 이런 일이 지속되어서 도움이 필요할 것 같아요."'
+                }
+            ];
+
+            return (
+                <div class="max-w-md mx-auto min-h-screen bg-white shadow-xl flex flex-col">
+                    {/* Header */}
+                    <header class="bg-indigo-600 text-white p-4 sticky top-0 z-10 flex justify-between items-center shadow-md">
+                        <div>
+                            <h1 class="font-bold text-lg">한 걸음 서클 (One-Step Circle)</h1>
+                            <p class="text-xs text-indigo-200">12주 모듈형 또래관계 증진 툴킷</p>
+                        </div>
+                        <div class="text-xs bg-indigo-700 px-2.5 py-1 rounded-full font-semibold">
+                            Step {step} / 4
+                        </div>
+                    </header>
+
+                    {/* Progress Bar */}
+                    <div class="w-full bg-slate-200 h-1.5">
+                        <div class="bg-indigo-600 h-1.5 transition-all duration-300" style={{ width: `${(step / 4) * 100}%` }}></div>
+                    </div>
+
+                    {/* Main Body */}
+                    <main class="flex-1 p-5 overflow-y-auto">
+                        {step === 1 && (
+                            <div class="space-y-6">
+                                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                                    <h2 class="text-indigo-900 font-bold text-base mb-1">Step 1. 오늘 나의 마음 체크인</h2>
+                                    <p class="text-xs text-indigo-700">말하기 불편하다면 이모지나 짧은 메시지로 가볍게 표시해보세요.</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-3">오늘 나의 감정 상태</label>
+                                    <div class="grid grid-cols-5 gap-2">
+                                        {emojis.map((item, idx) => (
+                                            <button 
+                                                key={idx}
+                                                onClick={() => setSelectedEmoji(item.label)}
+                                                class={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                                                    selectedEmoji === item.label 
+                                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20' 
+                                                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                                                }`}
+                                            >
+                                                <span class="text-2xl mb-1">{item.emoji}</span>
+                                                <span class="text-xs">{item.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">오늘 학급에 전하고 싶은 한 줄 마음</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="예: 오늘 조금 피곤하지만 열심히 참여해볼게!"
+                                        value={checkinNote}
+                                        onChange={(e) => setCheckinNote(e.target.value)}
+                                        class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+
+                                <button 
+                                    disabled={!selectedEmoji}
+                                    onClick={() => setStep(2)}
+                                    class="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-50 hover:bg-indigo-700 transition"
+                                >
+                                    다음: 3대 최소 조력 행동 연습 →
+                                </button>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div class="space-y-6">
+                                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                                    <h2 class="text-indigo-900 font-bold text-base mb-1">Step 2. 3대 최소 조력 행동 연습</h2>
+                                    <p class="text-xs text-indigo-700">소수에게 부담을 주지 않고 반 전체가 다 함께 연습하는 조력 행동입니다.</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">1) 가상 상황 선택</label>
+                                    <div class="space-y-2">
+                                        {scenarios.map((sc) => (
+                                            <div 
+                                                key={sc.id}
+                                                onClick={() => setSelectedScenario(sc)}
+                                                class={`p-3.5 border rounded-xl cursor-pointer text-sm transition ${
+                                                    selectedScenario?.id === sc.id 
+                                                    ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500' 
+                                                    : 'border-slate-200 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <div class="font-bold text-slate-800 mb-1">{sc.title}</div>
+                                                <div class="text-xs text-slate-600 leading-relaxed">{sc.desc}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {selectedScenario && (
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-2">2) 실천할 3대 행동 선택</label>
+                                        <div class="space-y-2">
+                                            {actions.map((act) => (
+                                                <div 
+                                                    key={act.id}
+                                                    onClick={() => setSelectedAction(act)}
+                                                    class={`p-3.5 border rounded-xl cursor-pointer text-sm transition ${
+                                                        selectedAction?.id === act.id 
+                                                        ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500' 
+                                                        : 'border-slate-200 hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    <div class="font-bold text-indigo-900 mb-1">{act.title}</div>
+                                                    <div class="text-xs text-slate-600 mb-2">{act.guide}</div>
+                                                    <div class="text-xs bg-slate-100 p-2 rounded text-slate-700 font-mono">예시: {act.example}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAction && (
+                                    <div class="space-y-3">
+                                        <label class="block text-sm font-semibold text-slate-700">3) 실전 한 문장 소리 내어 말해보기</label>
+                                        <textarea 
+                                            rows="2"
+                                            placeholder="선택한 행동에 맞춰 실제로 할 한 문장을 직접 적어보세요."
+                                            value={practiceScript}
+                                            onChange={(e) => setPracticeScript(e.target.value)}
+                                            class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        ></textarea>
+                                    </div>
+                                )}
+
+                                <div class="flex gap-2">
+                                    <button 
+                                        onClick={() => setStep(1)}
+                                        class="w-1/3 py-3 border border-slate-300 text-slate-600 rounded-xl font-medium text-sm"
+                                    >
+                                        ← 이전
+                                    </button>
+                                    <button 
+                                        disabled={!selectedScenario || !selectedAction || !practiceScript}
+                                        onClick={() => setStep(3)}
+                                        class="w-2/3 py-3 bg-indigo-600 text-white rounded-xl font-medium text-sm disabled:opacity-50 hover:bg-indigo-700 transition"
+                                    >
+                                        다음: 회복적 질문 툴킷 →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div class="space-y-5">
+                                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                                    <h2 class="text-indigo-900 font-bold text-base mb-1">Step 3. 회복적 4대 질문 성찰 툴킷</h2>
+                                    <p class="text-xs text-indigo-700">처벌("누가 그랬어?") 대신 성찰과 관계 회복("누가 어떤 영향을 받았을까?")을 돕는 질문입니다.</p>
+                                </div>
+
+                                <div class="space-y-4 text-sm">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">1. 무슨 일이 있었나요? (사건 객관화)</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="상황을 사실 중심으로 적어보세요."
+                                            value={restorativeAnswers.q1}
+                                            onChange={(e) => setRestorativeAnswers({...restorativeAnswers, q1: e.target.value})}
+                                            class="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">2. 그때 어떤 마음이나 기분이 들었나요? (정서 확인)</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="당시의 솔직한 감정을 적어보세요."
+                                            value={restorativeAnswers.q2}
+                                            onChange={(e) => setRestorativeAnswers({...restorativeAnswers, q2: e.target.value})}
+                                            class="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">3. 이 일로 누가 어떤 영향과 상처를 받았을까요? (영향 탐색)</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="상대방이나 반 친구들이 느꼈을 영향을 생각해보세요."
+                                            value={restorativeAnswers.q3}
+                                            onChange={(e) => setRestorativeAnswers({...restorativeAnswers, q3: e.target.value})}
+                                            class="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">4. 관계를 바로잡으려면 지금 무엇이 필요할까요? (회복 이행)</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="진심 어린 사과, 약속, 또는 대화 등 필요한 행동"
+                                            value={restorativeAnswers.q4}
+                                            onChange={(e) => setRestorativeAnswers({...restorativeAnswers, q4: e.target.value})}
+                                            class="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2 pt-2">
+                                    <button 
+                                        onClick={() => setStep(2)}
+                                        class="w-1/3 py-3 border border-slate-300 text-slate-600 rounded-xl font-medium text-sm"
+                                    >
+                                        ← 이전
+                                    </button>
+                                    <button 
+                                        disabled={!restorativeAnswers.q1 || !restorativeAnswers.q4}
+                                        onClick={() => setStep(4)}
+                                        class="w-2/3 py-3 bg-indigo-600 text-white rounded-xl font-medium text-sm disabled:opacity-50 hover:bg-indigo-700 transition"
+                                    >
+                                        다음: 자가 평가 & 배지 발급 →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 4 && (
+                            <div class="space-y-6">
+                                {!completed ? (
+                                    <>
+                                        <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                                            <h2 class="text-indigo-900 font-bold text-base mb-1">Step 4. 나의 조력 역량 자가 평가</h2>
+                                            <p class="text-xs text-indigo-700">오늘 연습을 통해 또래 친구를 도울 자신감이 얼마나 생겼나요?</p>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            <label class="block text-sm font-semibold text-slate-700">도움 행동 자신감 (1점: 전혀 없음 ~ 5점: 확실히 할 수 있음)</label>
+                                            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border">
+                                                {[1, 2, 3, 4, 5].map((num) => (
+                                                    <button 
+                                                        key={num}
+                                                        onClick={() => setConfidence(num)}
+                                                        class={`w-10 h-10 rounded-full font-bold text-sm transition ${
+                                                            confidence === num 
+                                                            ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400' 
+                                                            : 'bg-white text-slate-600 border border-slate-200'
+                                                        }`}
+                                                    >
+                                                        {num}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div class="flex justify-between text-xs text-slate-500 px-1">
+                                                <span>망설여짐</span>
+                                                <span>중간</span>
+                                                <span>확신함</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-xs text-amber-800 space-y-1">
+                                            <div class="font-bold">⚠️ 안전 주의 가이드</div>
+                                            <p>심각한 폭력이나 자해 위험 등 혼자 해결하기 힘든 사안은 반드시 <strong>담임선생님</strong>이나 <strong>Wee클래스 전문상담교사</strong>에게 즉시 알려야 합니다.</p>
+                                        </div>
+
+                                        <button 
+                                            onClick={() => setCompleted(true)}
+                                            class="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition"
+                                        >
+                                            체험 완료 & 실천 배지 발급받기 ✨
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div class="text-center py-6 space-y-5">
+                                        <div class="inline-block p-4 bg-emerald-100 text-emerald-600 rounded-full text-4xl mb-2">
+                                            🎖️
+                                        </div>
+                                        <div>
+                                            <h2 class="text-xl font-bold text-slate-800">한 걸음 조력자 인증 배지</h2>
+                                            <p class="text-xs text-slate-500 mt-1">오늘의 한 걸음 연습이 평화로운 학급을 만듭니다.</p>
+                                        </div>
+
+                                        <div class="bg-slate-50 p-4 rounded-xl border text-left text-xs space-y-2">
+                                            <div class="flex justify-between border-b pb-1.5">
+                                                <span class="text-slate-500">오늘의 감정</span>
+                                                <span class="font-bold text-slate-700">{selectedEmoji} ({checkinNote})</span>
+                                            </div>
+                                            <div class="flex justify-between border-b pb-1.5">
+                                                <span class="text-slate-500">선택 행동</span>
+                                                <span class="font-bold text-indigo-700">{selectedAction?.title}</span>
+                                            </div>
+                                            <div class="flex justify-between border-b pb-1.5">
+                                                <span class="text-slate-500">실전 한 문장</span>
+                                                <span class="font-bold text-slate-700">"{practiceScript}"</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-500">자신감 점수</span>
+                                                <span class="font-bold text-emerald-600">{confidence} / 5점</span>
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            onClick={() => {
+                                                setStep(1);
+                                                setCompleted(false);
+                                                setSelectedEmoji(null);
+                                                setSelectedScenario(null);
+                                                setSelectedAction(null);
+                                                setPracticeScript('');
+                                            }}
+                                            class="w-full py-3 border border-slate-300 text-slate-600 rounded-xl text-sm font-medium"
+                                        >
+                                            처음부터 다시 체험하기
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer class="p-3 bg-slate-50 border-t text-center text-xs text-slate-400">
+                        청소년교육개론 팀 발표 실천 대안 | 한 걸음 서클
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
